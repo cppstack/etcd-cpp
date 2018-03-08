@@ -1,5 +1,5 @@
 #include <etcd/member.hpp>
-#include "rpc.pb.h"
+#include <etcd/proto/rpc.pb.h>
 
 namespace etcd {
 

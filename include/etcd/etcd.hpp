@@ -3,8 +3,7 @@
 
 #include <memory>
 #include <etcd/member.hpp>
-
-#include "rpc.grpc.pb.h"
+#include <etcd/proto/rpc.grpc.pb.h>
 
 namespace grpc {
 class Channel;
