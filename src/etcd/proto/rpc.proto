@@ -1,0 +1,83 @@
+syntax = "proto3";
+package etcdserverpb;
+
+import "kv.proto";
+
+service KV {
+  // Puts the given key into the key-value store.
+  rpc Put(PutRequest) returns (PutResponse) { }
+}
+
+service Cluster {
+  // Lists all the members in the cluster.
+  rpc MemberList(MemberListRequest) returns (MemberListResponse) { }
+}
+
+message ResponseHeader {
+  // the ID of the cluster which sent the response.
+  uint64 cluster_id = 1;
+  // the ID of the member which sent the response.
+  uint64 member_id = 2;
+  // the key-value store revision when the request was applied.
+  int64 revision = 3;
+  // the raft term when the request was applied.
+  uint64 raft_term = 4;
+}
+
+message PutRequest {
+  // the key, in bytes, to put into the key-value store.
+  bytes key = 1;
+
+  // the value, in bytes, to associate with the key in the key-value store.
+  bytes value = 2;
+
+  // the lease ID to associate with the key in the key-value store
+  // A lease value of 0 indicates no lease.
+  int64 lease = 3;
+
+  // If set, gets the previous key-value pair before changing it.
+  // The previous key-value pair will be returned in the put response.
+  bool prev_kv = 4;
+
+  // If set, updates the key using its current value.
+  // Returns an error if the key does not exist.
+  bool ignore_value = 5;
+
+  // If set, updates the key using its current lease.
+  // Returns an error if the key does not exist.
+  bool ignore_lease = 6;
+}
+
+message PutResponse {
+  ResponseHeader header = 1;
+
+  // If prev_kv is set in the request,
+  // the previous key-value pair will be returned in the response.
+  mvccpb.KeyValue prev_kv = 2;
+}
+
+message Member {
+  // the member ID for this member
+  uint64 ID = 1;
+
+  // the human-readable name of the member
+  // If the member is not started, the name will be an empty string.
+  string name = 2;
+
+  // the list of URLs the member exposes to the cluster for communication
+  repeated string peerURLs = 3;
+
+  // the list of URLs the member exposes to clients for communication
+  // If the member is not started, clientURLs will be empty.
+  repeated string clientURLs = 4;
+}
+
+message MemberListRequest {
+}
+
+message MemberListResponse {
+  ResponseHeader header = 1;
+
+  // A list of all members associated with the cluster
+  repeated Member members = 2;
+}

@@ -3,6 +3,7 @@ add_subdirectory(proto)
 add_library(etcd
             etcd.cpp
             member.cpp
+            put_request.cpp
             grpc_error.cpp
 )
 

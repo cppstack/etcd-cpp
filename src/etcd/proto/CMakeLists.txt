@@ -1,8 +1,8 @@
 find_package(Protobuf REQUIRED)
 find_package(Protobuf_gRPC REQUIRED)
 
-set(RPCS etcdserverpb/rpc.proto)
-set(PROTOS ${RPCS})
+set(RPCS rpc.proto)
+set(PROTOS kv.proto ${RPCS})
 
 set(Protobuf_IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 

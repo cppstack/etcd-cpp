@@ -7,7 +7,8 @@ namespace etcd {
 etcd::etcd(const std::string& endpoints)
     : endpoints_(endpoints),
       channel_(grpc::CreateChannel(endpoints, grpc::InsecureChannelCredentials())),
-      cluster_stub_(etcdserverpb::Cluster::NewStub(channel_))
+      cluster_stub_(etcdserverpb::Cluster::NewStub(channel_)),
+      kv_stub_(etcdserverpb::KV::NewStub(channel_))
 { }
 
 std::vector<member> etcd::members() const
@@ -29,6 +30,19 @@ std::vector<member> etcd::members() const
               members.begin());
 
     return members;
+}
+
+void etcd::put(const std::string& key, const std::string& value)
+{
+    etcdserverpb::PutResponse response;
+
+    grpc::ClientContext context;
+
+    grpc::Status status = kv_stub_->Put(&context,
+        (etcdserverpb::PutRequest) put_request(key, value), &response);
+
+    if (!status.ok())
+        throw grpc_error(status);
 }
 
 }

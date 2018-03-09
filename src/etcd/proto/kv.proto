@@ -1,0 +1,26 @@
+syntax = "proto3";
+package mvccpb;
+
+message KeyValue {
+  // the key in bytes
+  bytes key = 1;
+
+  // the revision of last creation on this key
+  int64 create_revision = 2;
+
+  // the revision of last modification on this key
+  int64 mod_revision = 3;
+
+  // the version of the key
+  // A deletion resets the version to zero.
+  // Any modification of the key increases its version.
+  int64 version = 4;
+
+  // the value held by the key, in bytes
+  bytes value = 5;
+
+  // the ID of the lease that attached to key
+  // When the attached lease expires, the key will be deleted.
+  // If lease is 0, then no lease is attached to the key.
+  int64 lease = 6;
+}
