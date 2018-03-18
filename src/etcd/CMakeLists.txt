@@ -2,8 +2,9 @@ add_subdirectory(proto)
 
 add_library(etcd
             etcd.cpp
-            member.cpp
-            put_request.cpp
+            cluster/member.cpp
+            cluster/member_list_response.cpp
+            kv/put_request.cpp
             grpc_error.cpp
 )
 

@@ -1,8 +1,6 @@
 add_executable(etcdcli etcdcli.cpp)
 
 target_compile_options(etcdcli PRIVATE -Wall -Wextra -Wpointer-arith)
-target_include_directories(etcdcli PRIVATE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-target_link_libraries(etcdcli PRIVATE etcd)
+target_link_libraries(etcdcli PRIVATE etcd cst_program_options)
 
 install(TARGETS etcdcli DESTINATION bin)

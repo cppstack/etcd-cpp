@@ -1,4 +1,4 @@
-#include <etcd/put_request.hpp>
+#include <etcd/kv/put_request.hpp>
 #include <etcd/proto/rpc.pb.h>
 
 namespace etcd {

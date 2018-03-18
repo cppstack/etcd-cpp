@@ -14,7 +14,7 @@ public:
         : key_(key), value_(value)
     { }
 
-    explicit operator etcdserverpb::PutRequest() const;
+    operator etcdserverpb::PutRequest() const;
 
 private:
     std::string key_;

@@ -1,19 +1,28 @@
 #include <etcd/etcd.hpp>
 #include <iostream>
-#include "cst/program_options.hpp"
+#include <cst/program_options.hpp>
 
 namespace po = cst::program_options;
 
 namespace {
 
-void parse_global_options(int argc, char *const argv[],
-                          po::parsed_options& parsed, po::variables_map& vm)
+po::variables_map parse_global_options(int argc, char *const argv[])
 {
+    po::variables_map vm;
+    po::parsed_options parsed;
+
     po::options_description desc("Usage: etcdcli [options...] command...");
+
+    auto check_command = [](const std::string& cmd) {
+        if (cmd != "member" && cmd != "put") {
+            std::cerr << "invalid command" << std::endl;
+            std::exit(1);
+        }
+    };
 
     desc.add_options()
       ("endpoints", po::value<std::string>()->required()->default_value("127.0.0.1:2379"), "etcd end points", "endpoints")
-      ("command", po::value<std::string>()->required(), "", "", true)
+      ("command", po::value<std::string>()->required()->notifier(check_command), "", "", true)
       ("help,h", "display help text");
 
     po::positional_options_description pos;
@@ -29,10 +38,10 @@ void parse_global_options(int argc, char *const argv[],
         po::store(parsed, vm);
 
         if (vm.count("help") || !vm.count("command")) {
-            std::cerr << desc << "\n"
-                      << "Commands:\n"
+            std::cerr << desc
+                      << "\nCommands:\n"
                       << "  put            Puts the given key into the store\n"
-                      << "  member list    Lists all members in the cluster\n";
+                      << "  member list    Lists all members in the cluster\n"
                       << std::endl;
             std::exit(0);
         }
@@ -40,70 +49,67 @@ void parse_global_options(int argc, char *const argv[],
         std::cerr << e.what() << std::endl;
         std::exit(1);
     }
+
+    const std::string& command = vm["command"].as<std::string>();
+
+    po::options_description desc_;
+    po::positional_options_description pos_;
+
+    if (command == "member") {
+        desc_.add_options()
+          ("subcmd", po::value<std::string>()->required()->notifier(
+              [](const std::string& cmd) {
+                  if (cmd != "list") {
+                      std::cerr << "invalid sub member command" << std::endl;
+                      std::exit(1);
+                  }
+              }), "", "", true);
+
+        pos_.add("subcmd", 1);
+
+    } else if (command == "put") {
+        desc_.add_options()
+          ("key", po::value<std::string>()->required(), "", "", true)
+          ("value", po::value<std::string>()->required(), "", "", true);
+
+        pos_.add("key", 1);
+        pos_.add("value", 1);
+    }
+
+    try {
+        po::store(po::command_line_parser(parsed.unrecognized_options).
+                      options(desc_).positional(pos_).run(), vm);
+        po::notify(vm);
+    } catch (const po::option_error& e) {
+        std::cerr << e.what() << std::endl;
+        std::exit(1);
+    }
+
+    return vm;
 }
 
 void do_member_list(etcd::etcd& etcd, po::variables_map&)
 {
-    for (const auto& m : etcd.members()) {
+    for (const auto& m : etcd.member_list().members()) {
         std::cout << m.id() << ' ' << m.name();
-        for (const auto& u : m.peer_urls())
+        for (const auto& u : m.peerurls())
             std::cout << ' ' << u;
-        for (const auto& u : m.client_urls())
+        for (const auto& u : m.clienturls())
             std::cout << ' ' << u;
         std::cout << std::endl;
     }
 }
 
-void do_member(po::parsed_options& parsed, po::variables_map& vm)
+void do_member(etcd::etcd& etcd, po::variables_map& vm)
 {
-    std::string subcmd;
-
-    po::options_description desc("member options");
-    desc.add_options()
-      ("subcmd", po::value<std::string>(&subcmd)->required(), "", "", true);
-
-    po::positional_options_description pos;
-    pos.add("subcmd", 1);
-
-    try {
-        po::store(po::command_line_parser(parsed.unrecognized_options).
-                      options(desc).positional(pos).run(), vm);
-        po::notify(vm);
-    } catch (const po::option_error& e) {
-        std::cerr << e.what() << std::endl;
-        std::exit(1);
-    }
-
-    etcd::etcd etcd(vm["endpoints"].as<std::string>());
+    const std::string& subcmd = vm["subcmd"].as<std::string>();
 
     if (subcmd == "list")
         do_member_list(etcd, vm);
-    else
-        throw std::invalid_argument("unknown sub command for 'member'");
 }
 
-void do_put(po::parsed_options& parsed, po::variables_map& vm)
+void do_put(etcd::etcd& etcd, po::variables_map& vm)
 {
-    po::options_description desc("put options");
-    desc.add_options()
-      ("key", po::value<std::string>()->required(), "", "", true)
-      ("value", po::value<std::string>()->required(), "", "", true);
-
-    po::positional_options_description pos;
-    pos.add("key", 1);
-    pos.add("value", 1);
-
-    try {
-        po::store(po::command_line_parser(parsed.unrecognized_options).
-                      options(desc).positional(pos).run(), vm);
-        po::notify(vm);
-    } catch (const po::option_error& e) {
-        std::cerr << e.what() << std::endl;
-        std::exit(1);
-    }
-
-    etcd::etcd etcd(vm["endpoints"].as<std::string>());
-
     etcd.put(vm["key"].as<std::string>(), vm["value"].as<std::string>());
 
     std::cout << "OK" << std::endl;
@@ -113,18 +119,16 @@ void do_put(po::parsed_options& parsed, po::variables_map& vm)
 
 int main(int argc, char *const argv[])
 {
-    po::parsed_options parsed;
-    po::variables_map vm;
-    parse_global_options(argc, argv, parsed, vm);
+    po::variables_map vm = parse_global_options(argc, argv);
+
+    etcd::etcd etcd(vm["endpoints"].as<std::string>());
 
     const std::string& command = vm["command"].as<std::string>();
 
     if (command == "member")
-        do_member(parsed, vm);
+        do_member(etcd, vm);
     else if (command == "put")
-        do_put(parsed, vm);
-    else
-        throw std::invalid_argument("unknown command");
+        do_put(etcd, vm);
 
     return 0;
 }

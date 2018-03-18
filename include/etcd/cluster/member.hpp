@@ -19,20 +19,20 @@ public:
     uint64_t id() const noexcept
     { return id_; }
 
-    std::string name() const noexcept
+    const std::string& name() const noexcept
     { return name_; }
 
-    std::vector<std::string> peer_urls() const noexcept
-    { return peer_urls_; }
+    const std::vector<std::string>& peerurls() const noexcept
+    { return peerurls_; }
 
-    std::vector<std::string> client_urls() const noexcept
-    { return client_urls_; }
+    const std::vector<std::string>& clienturls() const noexcept
+    { return clienturls_; }
 
 private:
     uint64_t id_;
     std::string name_;
-    std::vector<std::string> peer_urls_;
-    std::vector<std::string> client_urls_;
+    std::vector<std::string> peerurls_;
+    std::vector<std::string> clienturls_;
 };
 
 }
