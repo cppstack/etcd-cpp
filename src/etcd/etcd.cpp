@@ -44,7 +44,7 @@ void etcd::put(const std::string& key, const std::string& value)
     grpc::ClientContext context;
 
     grpc::Status status = stub_->kv->Put(&context,
-        (etcdserverpb::PutRequest) put_request(key, value), &response);
+        put_request(key, value), &response);
 
     if (!status.ok())
         throw grpc_error(status);

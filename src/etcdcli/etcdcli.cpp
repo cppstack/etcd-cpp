@@ -88,34 +88,9 @@ po::variables_map parse_global_options(int argc, char *const argv[])
     return vm;
 }
 
-void do_member_list(etcd::etcd& etcd, po::variables_map&)
-{
-    for (const auto& m : etcd.member_list().members()) {
-        std::cout << m.id() << ' ' << m.name();
-        for (const auto& u : m.peerurls())
-            std::cout << ' ' << u;
-        for (const auto& u : m.clienturls())
-            std::cout << ' ' << u;
-        std::cout << std::endl;
-    }
-}
-
-void do_member(etcd::etcd& etcd, po::variables_map& vm)
-{
-    const std::string& subcmd = vm["subcmd"].as<std::string>();
-
-    if (subcmd == "list")
-        do_member_list(etcd, vm);
-}
-
-void do_put(etcd::etcd& etcd, po::variables_map& vm)
-{
-    etcd.put(vm["key"].as<std::string>(), vm["value"].as<std::string>());
-
-    std::cout << "OK" << std::endl;
-}
-
 } // unnamed namespace
+
+#include "commands.hpp"
 
 int main(int argc, char *const argv[])
 {
